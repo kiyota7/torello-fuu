@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>タスクボード</title>
+<style>
+  :root {
+    --board-bg: #1a5276;
+    --list-bg: #eef1f4;
+    --card-bg: #ffffff;
+    --text: #1c2b39;
+    --accent: #1a5276;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+    background: var(--board-bg);
+    color: var(--text);
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    color: #fff;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 20px;
+  }
+  #reset-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #reset-btn:hover { background: rgba(255,255,255,0.35); }
+
+  #board {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px 24px 24px;
+    overflow-x: auto;
+  }
+
+  .list {
+    background: var(--list-bg);
+    border-radius: 8px;
+    width: 260px;
+    min-width: 260px;
+    padding: 10px;
+  }
+  .list.drag-over {
+    outline: 2px dashed var(--accent);
+    outline-offset: -4px;
+  }
+
+  .list-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  .list-title {
+    flex: 1;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: text;
+    word-break: break-word;
+  }
+  .list-title:hover { background: rgba(0,0,0,0.06); }
+  .list-title[contenteditable="true"] {
+    background: #fff;
+    outline: 2px solid var(--accent);
+    cursor: text;
+  }
+  .list-delete {
+    background: none;
+    border: none;
+    color: #6b7785;
+    font-size: 15px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .list-delete:hover { background: rgba(0,0,0,0.08); color: #b3312c; }
+
+  .cards {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 6px;
+    min-height: 6px;
+  }
+
+  .card {
+    position: relative;
+    background: var(--card-bg);
+    border-radius: 6px;
+    padding: 8px 22px 8px 10px;
+    font-size: 14px;
+    line-height: 1.4;
+    box-shadow: 0 1px 0 rgba(9,30,66,0.25);
+    cursor: grab;
+    word-break: break-word;
+  }
+  .card.dragging { opacity: 0.4; }
+  .card-text[contenteditable="true"] {
+    outline: 2px solid var(--accent);
+    border-radius: 4px;
+    background: #fff;
+    cursor: text;
+  }
+  .card-delete {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: none;
+    background: none;
+    border: none;
+    font-size: 13px;
+    color: #6b7785;
+    cursor: pointer;
+    padding: 2px 4px;
+  }
+  .card:hover .card-delete { display: block; }
+  .card-delete:hover { color: #b3312c; }
+
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .card-meta select, .card-meta input[type="date"] {
+    font-family: inherit;
+    font-size: 12px;
+    color: #44546b;
+    border: 1px solid rgba(9,30,66,0.15);
+    border-radius: 4px;
+    background: #fff;
+    padding: 2px 4px;
+  }
+  .card-meta .priority-高 { color: #b3312c; font-weight: 600; }
+  .card-meta .priority-中 { color: #946f00; }
+  .card-meta .priority-低 { color: #44546b; }
+
+  .list-sort-actions {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  .list-sort-actions button {
+    flex: 1;
+    background: rgba(0,0,0,0.06);
+    border: none;
+    color: #44546b;
+    font-size: 12px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .list-sort-actions button:hover { background: rgba(0,0,0,0.14); }
+
+  .add-card-btn, .add-list-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 8px;
+    font-size: 14px;
+    color: inherit;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .add-card-btn:hover, .add-list-btn:hover { background: rgba(0,0,0,0.08); }
+
+  .add-form textarea, .add-form input {
+    width: 100%;
+    font-family: inherit;
+    font-size: 14px;
+    padding: 8px;
+    border: none;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(9,30,66,0.3);
+    resize: none;
+  }
+  .add-form textarea { min-height: 56px; }
+  .add-form .form-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .add-form .confirm-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .add-form .confirm-btn:hover { opacity: 0.9; }
+  .add-form .cancel-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    line-height: 1;
+    color: #6b7785;
+    cursor: pointer;
+  }
+
+  #add-list-col {
+    width: 260px;
+    min-width: 260px;
+  }
+  #add-list-col .add-list-btn {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+  }
+  #add-list-col .add-list-btn:hover { background: rgba(255,255,255,0.32); }
+  #add-list-col .add-form {
+    background: var(--list-bg);
+    border-radius: 8px;
+    padding: 10px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>タスクボード</h1>
+  <button id="reset-btn">サンプルに戻す</button>
+</header>
+
+<div id="board"></div>
+
+<script>
+(function () {
+  var STORAGE_KEY = 'trello-lite-board';
+
+  var PRIORITIES = ['高', '中', '低'];
+  var NO_DUE_DATE_SORT_VALUE = '9999-99-99';
+
+  function sampleData() {
+    return {
+      lists: [
+        {
+          id: 'list-1',
+          title: 'To Do',
+          cards: [
+            { id: 'card-1', text: '開業届の準備をする', priority: '高', dueDate: '2026-07-15' },
+            { id: 'card-2', text: '内装の見積もりを取る', priority: '中', dueDate: '' }
+          ]
+        },
+        {
+          id: 'list-2',
+          title: '進行中',
+          cards: [
+            { id: 'card-3', text: 'メニューの試作をする', priority: '中', dueDate: '2026-07-20' }
+          ]
+        },
+        {
+          id: 'list-3',
+          title: '完了',
+          cards: [
+            { id: 'card-4', text: '物件を契約する', priority: '低', dueDate: '2026-07-01' }
+          ]
+        }
+      ]
+    };
+  }
+
+  var state = load();
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return sampleData();
+  }
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function uid(prefix) {
+    return prefix + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+  }
+
+  var board = document.getElementById('board');
+
+  function render() {
+    board.innerHTML = '';
+    state.lists.forEach(function (list) {
+      board.appendChild(renderList(list));
+    });
+    board.appendChild(renderAddListColumn());
+  }
+
+  function renderList(list) {
+    var listEl = document.createElement('div');
+    listEl.className = 'list';
+    listEl.dataset.listId = list.id;
+
+    listEl.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      listEl.classList.add('drag-over');
+      var cardsEl = listEl.querySelector('.cards');
+      var draggingEl = document.querySelector('.card.dragging');
+      if (!cardsEl || !draggingEl) return;
+      var afterElement = getDragAfterElement(cardsEl, e.clientY);
+      if (afterElement == null) {
+        cardsEl.appendChild(draggingEl);
+      } else {
+        cardsEl.insertBefore(draggingEl, afterElement);
+      }
+    });
+    listEl.addEventListener('dragleave', function () {
+      listEl.classList.remove('drag-over');
+    });
+    listEl.addEventListener('drop', function (e) {
+      e.preventDefault();
+      listEl.classList.remove('drag-over');
+      syncStateFromDom();
+      save();
+      render();
+    });
+
+    var header = document.createElement('div');
+    header.className = 'list-header';
+
+    var titleEl = document.createElement('div');
+    titleEl.className = 'list-title';
+    titleEl.contentEditable = 'false';
+    titleEl.textContent = list.title;
+    titleEl.addEventListener('click', function () {
+      titleEl.contentEditable = 'true';
+      titleEl.focus();
+      document.execCommand('selectAll', false, null);
+    });
+    titleEl.addEventListener('blur', function () {
+      titleEl.contentEditable = 'false';
+      var newTitle = titleEl.textContent.trim() || list.title;
+      list.title = newTitle;
+      titleEl.textContent = newTitle;
+      save();
+    });
+    titleEl.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); }
+      if (e.key === 'Escape') { titleEl.textContent = list.title; titleEl.blur(); }
+    });
+
+    var delBtn = document.createElement('button');
+    delBtn.className = 'list-delete';
+    delBtn.textContent = '✕';
+    delBtn.title = 'リストを削除';
+    delBtn.addEventListener('click', function () {
+      if (confirm('「' + list.title + '」を削除しますか？中のカードも削除されます。')) {
+        state.lists = state.lists.filter(function (l) { return l.id !== list.id; });
+        save();
+        render();
+      }
+    });
+
+    header.appendChild(titleEl);
+    header.appendChild(delBtn);
+
+    var sortActions = document.createElement('div');
+    sortActions.className = 'list-sort-actions';
+
+    var sortByPriorityBtn = document.createElement('button');
+    sortByPriorityBtn.textContent = '優先度順';
+    sortByPriorityBtn.title = '優先度(高→中→低)で並び替え';
+    sortByPriorityBtn.addEventListener('click', function () {
+      list.cards.sort(function (a, b) {
+        return PRIORITIES.indexOf(a.priority) - PRIORITIES.indexOf(b.priority);
+      });
+      save();
+      render();
+    });
+
+    var sortByDueDateBtn = document.createElement('button');
+    sortByDueDateBtn.textContent = '期限順';
+    sortByDueDateBtn.title = '期限日の早い順に並び替え(未設定は最後)';
+    sortByDueDateBtn.addEventListener('click', function () {
+      list.cards.sort(function (a, b) {
+        var da = a.dueDate || NO_DUE_DATE_SORT_VALUE;
+        var db = b.dueDate || NO_DUE_DATE_SORT_VALUE;
+        return da < db ? -1 : da > db ? 1 : 0;
+      });
+      save();
+      render();
+    });
+
+    sortActions.appendChild(sortByPriorityBtn);
+    sortActions.appendChild(sortByDueDateBtn);
+
+    var cardsEl = document.createElement('div');
+    cardsEl.className = 'cards';
+    list.cards.forEach(function (card) {
+      cardsEl.appendChild(renderCard(card, list));
+    });
+
+    var addCardArea = document.createElement('div');
+    showAddCardButton(addCardArea, list);
+
+    listEl.appendChild(header);
+    listEl.appendChild(sortActions);
+    listEl.appendChild(cardsEl);
+    listEl.appendChild(addCardArea);
+
+    return listEl;
+  }
+
+  function renderCard(card, list) {
+    var cardEl = document.createElement('div');
+    cardEl.className = 'card';
+    cardEl.draggable = true;
+    cardEl.dataset.cardId = card.id;
+
+    cardEl.addEventListener('dragstart', function (e) {
+      e.dataTransfer.setData('text/plain', card.id);
+      setTimeout(function () { cardEl.classList.add('dragging'); }, 0);
+    });
+    cardEl.addEventListener('dragend', function () {
+      cardEl.classList.remove('dragging');
+    });
+
+    var textEl = document.createElement('div');
+    textEl.className = 'card-text';
+    textEl.contentEditable = 'false';
+    textEl.textContent = card.text;
+    textEl.addEventListener('click', function (e) {
+      e.stopPropagation();
+      textEl.contentEditable = 'true';
+      textEl.focus();
+    });
+    textEl.addEventListener('blur', function () {
+      textEl.contentEditable = 'false';
+      var newText = textEl.textContent.trim();
+      if (newText) {
+        card.text = newText;
+      } else {
+        textEl.textContent = card.text;
+      }
+      save();
+    });
+    textEl.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); textEl.blur(); }
+      if (e.key === 'Escape') { textEl.textContent = card.text; textEl.blur(); }
+    });
+
+    var delBtn = document.createElement('button');
+    delBtn.className = 'card-delete';
+    delBtn.textContent = '✕';
+    delBtn.title = 'カードを削除';
+    delBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      list.cards = list.cards.filter(function (c) { return c.id !== card.id; });
+      save();
+      render();
+    });
+
+    var metaEl = document.createElement('div');
+    metaEl.className = 'card-meta';
+
+    var prioritySelect = document.createElement('select');
+    PRIORITIES.forEach(function (p) {
+      var opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = p;
+      prioritySelect.appendChild(opt);
+    });
+    prioritySelect.value = card.priority;
+    prioritySelect.className = 'priority-' + card.priority;
+    prioritySelect.addEventListener('click', function (e) { e.stopPropagation(); });
+    prioritySelect.addEventListener('change', function () {
+      card.priority = prioritySelect.value;
+      prioritySelect.className = 'priority-' + card.priority;
+      save();
+    });
+
+    var dueDateInput = document.createElement('input');
+    dueDateInput.type = 'date';
+    dueDateInput.value = card.dueDate || '';
+    dueDateInput.addEventListener('click', function (e) { e.stopPropagation(); });
+    dueDateInput.addEventListener('change', function () {
+      card.dueDate = dueDateInput.value;
+      save();
+    });
+
+    metaEl.appendChild(prioritySelect);
+    metaEl.appendChild(dueDateInput);
+
+    cardEl.appendChild(textEl);
+    cardEl.appendChild(metaEl);
+    cardEl.appendChild(delBtn);
+    return cardEl;
+  }
+
+  function getDragAfterElement(cardsEl, y) {
+    var draggableEls = [].slice.call(cardsEl.querySelectorAll('.card:not(.dragging)'));
+    return draggableEls.reduce(function (closest, child) {
+      var box = child.getBoundingClientRect();
+      var offset = y - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) {
+        return { offset: offset, element: child };
+      }
+      return closest;
+    }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
+  }
+
+  function syncStateFromDom() {
+    var cardMap = {};
+    state.lists.forEach(function (list) {
+      list.cards.forEach(function (card) { cardMap[card.id] = card; });
+    });
+    state.lists.forEach(function (list) {
+      var listEl = board.querySelector('.list[data-list-id="' + list.id + '"]');
+      if (!listEl) return;
+      var cardEls = [].slice.call(listEl.querySelectorAll('.cards .card'));
+      list.cards = cardEls.map(function (cardEl) { return cardMap[cardEl.dataset.cardId]; }).filter(Boolean);
+    });
+  }
+
+  function showAddCardButton(container, list) {
+    container.innerHTML = '';
+    var btn = document.createElement('button');
+    btn.className = 'add-card-btn';
+    btn.textContent = '+ カードを追加';
+    btn.addEventListener('click', function () {
+      showAddCardForm(container, list);
+    });
+    container.appendChild(btn);
+  }
+
+  function showAddCardForm(container, list) {
+    container.innerHTML = '';
+    var form = document.createElement('div');
+    form.className = 'add-form';
+
+    var textarea = document.createElement('textarea');
+    textarea.placeholder = 'カードの内容を入力...';
+
+    var metaRow = document.createElement('div');
+    metaRow.className = 'card-meta';
+
+    var prioritySelect = document.createElement('select');
+    PRIORITIES.forEach(function (p) {
+      var opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = p;
+      prioritySelect.appendChild(opt);
+    });
+    prioritySelect.value = '中';
+
+    var dueDateInput = document.createElement('input');
+    dueDateInput.type = 'date';
+
+    metaRow.appendChild(prioritySelect);
+    metaRow.appendChild(dueDateInput);
+
+    var actions = document.createElement('div');
+    actions.className = 'form-actions';
+
+    var confirmBtn = document.createElement('button');
+    confirmBtn.className = 'confirm-btn';
+    confirmBtn.textContent = 'カードを追加';
+
+    var cancelBtn = document.createElement('button');
+    cancelBtn.className = 'cancel-btn';
+    cancelBtn.textContent = '✕';
+
+    function submit() {
+      var text = textarea.value.trim();
+      if (text) {
+        list.cards.push({
+          id: uid('card'),
+          text: text,
+          priority: prioritySelect.value,
+          dueDate: dueDateInput.value
+        });
+        save();
+      }
+      render();
+    }
+
+    confirmBtn.addEventListener('click', submit);
+    cancelBtn.addEventListener('click', function () { showAddCardButton(container, list); });
+    textarea.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
+      if (e.key === 'Escape') { showAddCardButton(container, list); }
+    });
+
+    actions.appendChild(confirmBtn);
+    actions.appendChild(cancelBtn);
+    form.appendChild(textarea);
+    form.appendChild(metaRow);
+    form.appendChild(actions);
+    container.appendChild(form);
+    textarea.focus();
+  }
+
+  function renderAddListColumn() {
+    var col = document.createElement('div');
+    col.id = 'add-list-col';
+
+    function showButton() {
+      col.innerHTML = '';
+      var btn = document.createElement('button');
+      btn.className = 'add-list-btn';
+      btn.textContent = '+ リストを追加';
+      btn.addEventListener('click', showForm);
+      col.appendChild(btn);
+    }
+
+    function showForm() {
+      col.innerHTML = '';
+      var form = document.createElement('div');
+      form.className = 'add-form';
+
+      var input = document.createElement('input');
+      input.placeholder = 'リスト名を入力...';
+
+      var actions = document.createElement('div');
+      actions.className = 'form-actions';
+
+      var confirmBtn = document.createElement('button');
+      confirmBtn.className = 'confirm-btn';
+      confirmBtn.textContent = 'リストを追加';
+
+      var cancelBtn = document.createElement('button');
+      cancelBtn.className = 'cancel-btn';
+      cancelBtn.textContent = '✕';
+
+      function submit() {
+        var title = input.value.trim();
+        if (title) {
+          state.lists.push({ id: uid('list'), title: title, cards: [] });
+          save();
+        }
+        render();
+      }
+
+      confirmBtn.addEventListener('click', submit);
+      cancelBtn.addEventListener('click', showButton);
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); submit(); }
+        if (e.key === 'Escape') { showButton(); }
+      });
+
+      actions.appendChild(confirmBtn);
+      actions.appendChild(cancelBtn);
+      form.appendChild(input);
+      form.appendChild(actions);
+      col.appendChild(form);
+      input.focus();
+    }
+
+    showButton();
+    return col;
+  }
+
+  document.getElementById('reset-btn').addEventListener('click', function () {
+    if (confirm('すべてのデータを削除してサンプルの状態に戻しますか？')) {
+      state = sampleData();
+      save();
+      render();
+    }
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
