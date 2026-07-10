@@ -235,20 +235,158 @@
     border-radius: 8px;
     padding: 10px;
   }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #current-user-label {
+    font-size: 13px;
+    opacity: 0.85;
+  }
+  #logout-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #logout-btn:hover { background: rgba(255,255,255,0.35); }
+
+  #auth-view {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  #auth-view[hidden], #board-view[hidden] {
+    display: none;
+  }
+  .auth-card {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 28px 32px;
+    width: 320px;
+    box-shadow: 0 2px 8px rgba(9,30,66,0.3);
+  }
+  .auth-card h1 {
+    margin: 0 0 18px;
+    font-size: 20px;
+    text-align: center;
+    color: var(--text);
+  }
+  .auth-error {
+    background: #fdecea;
+    color: #b3312c;
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+  }
+  .auth-form label {
+    display: block;
+    font-size: 13px;
+    color: #44546b;
+    margin-bottom: 12px;
+  }
+  .auth-form input {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    font-family: inherit;
+    font-size: 14px;
+    padding: 8px;
+    border: 1px solid rgba(9,30,66,0.2);
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  .auth-form .confirm-btn {
+    width: 100%;
+    margin-top: 4px;
+  }
+  .auth-switch {
+    font-size: 13px;
+    text-align: center;
+    margin: 14px 0 0;
+    color: #44546b;
+  }
+  .auth-switch a {
+    color: var(--accent);
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>タスクボード</h1>
-  <button id="reset-btn">サンプルに戻す</button>
-</header>
+<div id="auth-view">
+  <div class="auth-card">
+    <h1>タスクボード</h1>
+    <div id="auth-error" class="auth-error" hidden></div>
 
-<div id="board"></div>
+    <form id="login-form" class="auth-form">
+      <label>ユーザー名
+        <input type="text" id="login-username" autocomplete="username" required>
+      </label>
+      <label>パスワード
+        <input type="password" id="login-password" autocomplete="current-password" required>
+      </label>
+      <button type="submit" class="confirm-btn">ログイン</button>
+    </form>
+    <p class="auth-switch" id="to-register-switch">アカウントをお持ちでない方は <a id="show-register">新規登録</a></p>
+
+    <form id="register-form" class="auth-form" hidden>
+      <label>ユーザー名
+        <input type="text" id="register-username" autocomplete="username" required>
+      </label>
+      <label>パスワード
+        <input type="password" id="register-password" autocomplete="new-password" required>
+      </label>
+      <button type="submit" class="confirm-btn">登録する</button>
+    </form>
+    <p class="auth-switch" id="to-login-switch" hidden>すでにアカウントをお持ちの方は <a id="show-login">ログイン</a></p>
+  </div>
+</div>
+
+<div id="board-view" hidden>
+  <header>
+    <h1>タスクボード</h1>
+    <div class="header-actions">
+      <span id="current-user-label"></span>
+      <button id="reset-btn">サンプルに戻す</button>
+      <button id="logout-btn">ログアウト</button>
+    </div>
+  </header>
+
+  <div id="board"></div>
+</div>
 
 <script>
 (function () {
-  var STORAGE_KEY = 'trello-lite-board';
+  // 注: ユーザー登録・ログインは画面確認用のモック実装(平文比較・localStorage保存)。
+  // 実際にはSpring Security + パスワードハッシュ化(bcrypt等)でバックエンド側に実装する。
+  var USERS_KEY = 'trello-lite-users';
+  var CURRENT_USER_KEY = 'trello-lite-current-user';
+  var currentUsername = null;
+
+  function boardKey(username) {
+    return 'trello-lite-board:' + username;
+  }
+
+  function loadUsers() {
+    try {
+      var raw = localStorage.getItem(USERS_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return {};
+  }
+
+  function saveUsers(users) {
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  }
 
   var PRIORITIES = ['高', '中', '低'];
   var NO_DUE_DATE_SORT_VALUE = '9999-99-99';
@@ -282,18 +420,19 @@
     };
   }
 
-  var state = load();
+  var state = null;
 
-  function load() {
+  function load(username) {
     try {
-      var raw = localStorage.getItem(STORAGE_KEY);
+      var raw = localStorage.getItem(boardKey(username));
       if (raw) return JSON.parse(raw);
     } catch (e) {}
     return sampleData();
   }
 
   function save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if (!currentUsername) return;
+    localStorage.setItem(boardKey(currentUsername), JSON.stringify(state));
   }
 
   function uid(prefix) {
@@ -682,7 +821,108 @@
     }
   });
 
-  render();
+  var authView = document.getElementById('auth-view');
+  var boardView = document.getElementById('board-view');
+  var authError = document.getElementById('auth-error');
+  var loginForm = document.getElementById('login-form');
+  var registerForm = document.getElementById('register-form');
+  var currentUserLabel = document.getElementById('current-user-label');
+
+  function showAuthError(message) {
+    authError.textContent = message;
+    authError.hidden = false;
+  }
+
+  function hideAuthError() {
+    authError.hidden = true;
+  }
+
+  function showLoginForm() {
+    hideAuthError();
+    loginForm.reset();
+    registerForm.reset();
+    loginForm.hidden = false;
+    document.getElementById('to-register-switch').hidden = false;
+    registerForm.hidden = true;
+    document.getElementById('to-login-switch').hidden = true;
+  }
+
+  function showRegisterForm() {
+    hideAuthError();
+    loginForm.reset();
+    registerForm.reset();
+    loginForm.hidden = true;
+    document.getElementById('to-register-switch').hidden = true;
+    registerForm.hidden = false;
+    document.getElementById('to-login-switch').hidden = false;
+  }
+
+  function showBoardView(username) {
+    currentUsername = username;
+    localStorage.setItem(CURRENT_USER_KEY, username);
+    state = load(username);
+    currentUserLabel.textContent = username + ' さん';
+    authView.hidden = true;
+    boardView.hidden = false;
+    render();
+  }
+
+  function showAuthView() {
+    currentUsername = null;
+    localStorage.removeItem(CURRENT_USER_KEY);
+    boardView.hidden = true;
+    authView.hidden = false;
+    showLoginForm();
+  }
+
+  document.getElementById('show-register').addEventListener('click', function (e) {
+    e.preventDefault();
+    showRegisterForm();
+  });
+  document.getElementById('show-login').addEventListener('click', function (e) {
+    e.preventDefault();
+    showLoginForm();
+  });
+
+  loginForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var username = document.getElementById('login-username').value.trim();
+    var password = document.getElementById('login-password').value;
+    var users = loadUsers();
+    if (!users[username] || users[username] !== password) {
+      showAuthError('ユーザー名またはパスワードが正しくありません。');
+      return;
+    }
+    showBoardView(username);
+  });
+
+  registerForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var username = document.getElementById('register-username').value.trim();
+    var password = document.getElementById('register-password').value;
+    var users = loadUsers();
+    if (users[username]) {
+      showAuthError('そのユーザー名は既に使用されています。');
+      return;
+    }
+    users[username] = password;
+    saveUsers(users);
+    showBoardView(username);
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', function () {
+    showAuthView();
+  });
+
+  (function init() {
+    var savedUsername = localStorage.getItem(CURRENT_USER_KEY);
+    var users = loadUsers();
+    if (savedUsername && users[savedUsername] !== undefined) {
+      showBoardView(savedUsername);
+    } else {
+      showAuthView();
+    }
+  })();
 })();
 </script>
 
