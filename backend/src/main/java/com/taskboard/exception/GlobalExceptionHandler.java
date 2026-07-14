@@ -14,6 +14,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
     }
 
+    @ExceptionHandler(CardNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleCardNotFound(CardNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException e) {
         return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
