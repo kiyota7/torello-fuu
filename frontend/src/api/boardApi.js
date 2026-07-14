@@ -17,3 +17,10 @@ export async function updateCard(cardId, { text, priority, dueDate, listId }) {
   }
   return response.json();
 }
+
+export async function deleteCard(cardId) {
+  const response = await fetch(`/api/cards/${cardId}`, { method: 'DELETE' });
+  if (!response.ok) {
+    throw new Error(`カードの削除に失敗しました (status: ${response.status})`);
+  }
+}

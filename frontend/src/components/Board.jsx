@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchLists } from '../api/boardApi';
+import { fetchLists, deleteCard } from '../api/boardApi';
 import TaskList from './TaskList';
 import CardDetailModal from './CardDetailModal';
 
@@ -29,6 +29,12 @@ function Board() {
     loadLists();
   }, []);
 
+  const handleCardDelete = (card) => {
+    deleteCard(card.id)
+      .then(loadLists)
+      .catch((error) => window.alert(error.message));
+  };
+
   if (status === 'loading') {
     return <p className="status-message">読み込み中...</p>;
   }
@@ -40,7 +46,12 @@ function Board() {
   return (
     <div id="board">
       {lists.map((list) => (
-        <TaskList key={list.id} list={list} onCardClick={setSelectedCard} />
+        <TaskList
+          key={list.id}
+          list={list}
+          onCardClick={setSelectedCard}
+          onCardDelete={handleCardDelete}
+        />
       ))}
       {selectedCard && (
         <CardDetailModal

@@ -40,6 +40,7 @@ header h1 {
 }
 
 .card {
+  position: relative;
   background: var(--card-bg);
   border-radius: 6px;
   padding: 8px 10px;
@@ -47,6 +48,30 @@ header h1 {
   line-height: 1.4;
   box-shadow: 0 1px 0 rgba(9, 30, 66, 0.25);
   word-break: break-word;
+}
+
+.card-delete {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #44546b;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.1s, background 0.1s;
+}
+
+.card:hover .card-delete {
+  opacity: 1;
+}
+
+.card-delete:hover {
+  background: rgba(9, 30, 66, 0.1);
 }
 
 .card-meta {
