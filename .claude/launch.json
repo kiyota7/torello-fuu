@@ -12,6 +12,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "/Users/yoshinokaren/Downloads/frontend", "run", "dev", "--", "--port", "5173"],
       "port": 5173
+    },
+    {
+      "name": "backend",
+      "runtimeExecutable": "mvn",
+      "runtimeArgs": ["-f", "/Users/yoshinokaren/Downloads/backend/pom.xml", "spring-boot:run"],
+      "port": 8080
     }
   ]
 }

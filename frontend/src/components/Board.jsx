@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchLists } from '../api/boardApi';
 import TaskList from './TaskList';
+import CardDetailModal from './CardDetailModal';
 
 // ログインAPI未実装のため、暫定的にテストユーザーのIDを固定で使用する。
 // ログイン機能実装後は認証済みユーザーのIDに置き換える。
@@ -10,9 +11,10 @@ function Board() {
   const [lists, setLists] = useState([]);
   const [status, setStatus] = useState('loading');
   const [errorMessage, setErrorMessage] = useState('');
+  const [selectedCard, setSelectedCard] = useState(null);
 
-  useEffect(() => {
-    fetchLists(TEMP_USER_ID)
+  const loadLists = () => {
+    return fetchLists(TEMP_USER_ID)
       .then((data) => {
         setLists(data);
         setStatus('success');
@@ -21,6 +23,10 @@ function Board() {
         setErrorMessage(error.message);
         setStatus('error');
       });
+  };
+
+  useEffect(() => {
+    loadLists();
   }, []);
 
   if (status === 'loading') {
@@ -34,8 +40,19 @@ function Board() {
   return (
     <div id="board">
       {lists.map((list) => (
-        <TaskList key={list.id} list={list} />
+        <TaskList key={list.id} list={list} onCardClick={setSelectedCard} />
       ))}
+      {selectedCard && (
+        <CardDetailModal
+          card={selectedCard}
+          lists={lists}
+          onClose={() => setSelectedCard(null)}
+          onSaved={() => {
+            setSelectedCard(null);
+            loadLists();
+          }}
+        />
+      )}
     </div>
   );
 }

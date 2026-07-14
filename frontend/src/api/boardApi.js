@@ -5,3 +5,15 @@ export async function fetchLists(userId) {
   }
   return response.json();
 }
+
+export async function updateCard(cardId, { text, priority, dueDate, listId }) {
+  const response = await fetch(`/api/cards/${cardId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, priority, dueDate, listId }),
+  });
+  if (!response.ok) {
+    throw new Error(`カードの更新に失敗しました (status: ${response.status})`);
+  }
+  return response.json();
+}
