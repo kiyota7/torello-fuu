@@ -44,4 +44,11 @@ public class CardService {
         card = cardRepository.save(card);
         return CardResponse.from(card);
     }
+
+    @Transactional
+    public void deleteCard(Long cardId) {
+        Card card = cardRepository.findById(cardId)
+                .orElseThrow(() -> new CardNotFoundException(cardId));
+        cardRepository.delete(card);
+    }
 }
