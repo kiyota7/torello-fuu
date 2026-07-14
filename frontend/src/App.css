@@ -1,0 +1,72 @@
+header {
+  display: flex;
+  align-items: center;
+  padding: 14px 24px;
+  color: #fff;
+}
+header h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+#board {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 24px 24px;
+  overflow-x: auto;
+}
+
+.list {
+  background: var(--list-bg);
+  border-radius: 8px;
+  width: 260px;
+  min-width: 260px;
+  padding: 10px;
+  text-align: left;
+}
+
+.list-title {
+  font-weight: 600;
+  font-size: 14px;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  box-shadow: 0 1px 0 rgba(9, 30, 66, 0.25);
+  word-break: break-word;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #44546b;
+}
+
+.priority-高 { color: #b3312c; font-weight: 600; }
+.priority-中 { color: #946f00; }
+.priority-低 { color: #44546b; }
+
+.status-message {
+  color: #fff;
+  padding: 24px;
+  font-size: 14px;
+}
+.status-error {
+  color: #ffd6d1;
+}
