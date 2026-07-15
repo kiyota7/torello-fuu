@@ -3,6 +3,7 @@ package com.taskboard.controller;
 import com.taskboard.dto.CardResponse;
 import com.taskboard.dto.UpdateCardRequest;
 import com.taskboard.service.CardService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,7 +22,7 @@ public class CardController {
     }
 
     @PutMapping("/api/cards/{cardId}")
-    public CardResponse updateCard(@PathVariable Long cardId, @RequestBody UpdateCardRequest request) {
+    public CardResponse updateCard(@PathVariable Long cardId, @Valid @RequestBody UpdateCardRequest request) {
         return cardService.updateCard(cardId, request);
     }
 

@@ -4,6 +4,7 @@ import com.taskboard.dto.RegisterRequest;
 import com.taskboard.dto.RegisterResponse;
 import com.taskboard.entity.AppUser;
 import com.taskboard.service.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,7 +23,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<RegisterResponse> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
         AppUser user = authService.register(request.username(), request.password());
         return ResponseEntity.status(HttpStatus.CREATED).body(RegisterResponse.from(user));
     }

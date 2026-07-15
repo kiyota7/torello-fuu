@@ -34,12 +34,6 @@ public class AuthService {
 
     @Transactional
     public AppUser register(String username, String password) {
-        if (username == null || username.isBlank()) {
-            throw new IllegalArgumentException("ユーザー名を入力してください。");
-        }
-        if (password == null || password.isBlank()) {
-            throw new IllegalArgumentException("パスワードを入力してください。");
-        }
         if (appUserRepository.findByUsername(username).isPresent()) {
             throw new DuplicateUsernameException(username);
         }
