@@ -30,7 +30,7 @@ function Board() {
   }, []);
 
   const handleCardDelete = (card) => {
-    deleteCard(card.id)
+    deleteCard(card.id, TEMP_USER_ID)
       .then(loadLists)
       .catch((error) => window.alert(error.message));
   };
@@ -57,6 +57,7 @@ function Board() {
         <CardDetailModal
           card={selectedCard}
           lists={lists}
+          userId={TEMP_USER_ID}
           onClose={() => setSelectedCard(null)}
           onSaved={() => {
             setSelectedCard(null);

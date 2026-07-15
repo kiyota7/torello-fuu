@@ -23,17 +23,22 @@ public class CardService {
 
     @Transactional
     public CardResponse updateCard(Long cardId, UpdateCardRequest request) {
-        Card card = cardRepository.findById(cardId)
-                .orElseThrow(() -> new CardNotFoundException(cardId));
-
         if (request.text() == null || request.text().isBlank()) {
             throw new IllegalArgumentException("カードの内容を入力してください。");
         }
         if (request.listId() == null) {
             throw new IllegalArgumentException("移動先のリストを選択してください。");
         }
+        if (request.userId() == null) {
+            throw new IllegalArgumentException("ユーザーIDを指定してください。");
+        }
+
+        Card card = cardRepository.findById(cardId)
+                .filter(c -> c.getList().getUser().getId().equals(request.userId()))
+                .orElseThrow(() -> new CardNotFoundException(cardId));
 
         TaskList list = taskListRepository.findById(request.listId())
+                .filter(l -> l.getUser().getId().equals(request.userId()))
                 .orElseThrow(() -> new IllegalArgumentException("移動先のリストが見つかりません: " + request.listId()));
 
         card.setText(request.text());
@@ -46,8 +51,9 @@ public class CardService {
     }
 
     @Transactional
-    public void deleteCard(Long cardId) {
+    public void deleteCard(Long cardId, Long userId) {
         Card card = cardRepository.findById(cardId)
+                .filter(c -> c.getList().getUser().getId().equals(userId))
                 .orElseThrow(() -> new CardNotFoundException(cardId));
         cardRepository.delete(card);
     }
