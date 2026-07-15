@@ -23,16 +23,6 @@ public class CardService {
 
     @Transactional
     public CardResponse updateCard(Long cardId, UpdateCardRequest request) {
-        if (request.text() == null || request.text().isBlank()) {
-            throw new IllegalArgumentException("カードの内容を入力してください。");
-        }
-        if (request.listId() == null) {
-            throw new IllegalArgumentException("移動先のリストを選択してください。");
-        }
-        if (request.userId() == null) {
-            throw new IllegalArgumentException("ユーザーIDを指定してください。");
-        }
-
         Card card = cardRepository.findById(cardId)
                 .filter(c -> c.getList().getUser().getId().equals(request.userId()))
                 .orElseThrow(() -> new CardNotFoundException(cardId));
