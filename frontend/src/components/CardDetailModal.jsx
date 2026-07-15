@@ -3,7 +3,7 @@ import { updateCard } from '../api/boardApi';
 
 const PRIORITIES = ['高', '中', '低'];
 
-function CardDetailModal({ card, lists, onClose, onSaved }) {
+function CardDetailModal({ card, lists, userId, onClose, onSaved }) {
   const [text, setText] = useState(card.text);
   const [priority, setPriority] = useState(card.priority);
   const [dueDate, setDueDate] = useState(card.dueDate ?? '');
@@ -20,6 +20,7 @@ function CardDetailModal({ card, lists, onClose, onSaved }) {
         priority,
         dueDate: dueDate || null,
         listId: Number(listId),
+        userId,
       });
       onSaved(updated);
     } catch (error) {
