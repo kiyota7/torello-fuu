@@ -1,0 +1,5 @@
+# このファイルをコピーして terraform.tfvars を作成し、実際の値を入力すること。
+# terraform.tfvars は .gitignore 対象なのでコミットされない。
+
+aws_region  = "ap-northeast-1"
+db_password = "change-me"
