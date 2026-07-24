@@ -13,9 +13,16 @@ if [ ! -f /swapfile ]; then
 fi
 
 # --- Docker / Git の導入 ---
-dnf install -y docker docker-compose-plugin git
+# Amazon Linux 2023のdnfリポジトリには docker-compose-plugin パッケージが存在しないため、
+# Docker Compose(v2)は公式GitHubリリースのバイナリをCLIプラグインとして直接配置する。
+dnf install -y docker git
 systemctl enable --now docker
 usermod -aG docker ec2-user
+
+mkdir -p /usr/local/lib/docker/cli-plugins
+curl -SL https://github.com/docker/compose/releases/download/v2.29.7/docker-compose-linux-x86_64 \
+  -o /usr/local/lib/docker/cli-plugins/docker-compose
+chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
 
 # --- アプリの取得 ---
 mkdir -p /opt/app
