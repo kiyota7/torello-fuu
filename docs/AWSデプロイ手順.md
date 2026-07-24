@@ -16,12 +16,16 @@ AWSマネジメントコンソールを手動で操作するのではなく、**
 [EC2インスタンス 1台] (t3.micro, Amazon Linux 2023)
   └─ Docker Compose
        ├─ frontend コンテナ (Nginx: Reactの画面を配信 + /api を backend へ中継)
-       ├─ backend コンテナ (Spring Bootのアプリ本体)
-       └─ db コンテナ (PostgreSQL, データの保存先)
+       └─ backend コンテナ (Spring Bootのアプリ本体)
+            │ (5432番のみ、EC2のセキュリティグループからしか繋がらない)
+            ▼
+       RDS(PostgreSQL, マネージドDB。publicly_accessible=false)
 ```
 
-EC2インスタンス1台の中でDocker Composeを使い、フロントエンド・バックエンド・データベースの
-3つのコンテナをまとめて動かす、最小構成のシステムである。
+データベースは当初EC2内のDockerコンテナで動かしていたが、AWSのマネージドDBサービスである
+**RDS**に置き換えた。RDSは`publicly_accessible = false`に設定し、セキュリティグループでも
+**EC2のセキュリティグループ経由の5432番のみ**を許可しているため、インターネットからはもちろん、
+EC2以外のAWSリソースからも一切接続できない。
 
 ### 1-2. 用語の整理(超入門)
 
@@ -242,6 +246,8 @@ terraform destroy
 - **EBS(8GB gp3)**: 無料利用枠は月30GBまでなので余裕がある。
 - **Elastic IP**: インスタンスが起動している間は無料。ただし**インスタンスを停止したままElastic IPだけ
   残すと課金される**ので、長期間使わない場合は`terraform destroy`でElastic IPごと削除すること。
+- **RDS(db.t3.micro, 20GB, Single-AZ)**: 無料利用枠の対象(月750時間まで、アカウント作成から12ヶ月。
+  EC2の無料枠時間とは別枠でカウントされる)。ストレージも20GBまでは無料利用枠の範囲内。
 - **データ転送**: 無料利用枠は月100GBまで(個人の学習・デモ用途では十分)。
 
 ## 8. 今回のスコープ外(発展課題)
@@ -249,8 +255,6 @@ terraform destroy
 このデプロイ構成は「最小構成・無料利用枠優先」を優先したための割り切りがある。
 興味があれば、次のような発展的な構成にも挑戦できる。
 
-- **RDS(マネージドPostgreSQL)への分離**: EC2内のコンテナではなく、AWSが管理するデータベース
-  サービスを使う(可用性・バックアップの自動化と引き換えに追加コストが発生する)
 - **HTTPS化**: 独自ドメイン + AWS Certificate Manager(ACM) + ALB(Application Load Balancer)、
   またはCertbotによるLet's Encrypt証明書の導入
 - **リモートstate管理**: S3 + DynamoDBを使い、Terraformのstateをチーム間で共有・排他制御する

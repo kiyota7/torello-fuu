@@ -1,31 +1,12 @@
 services:
-  db:
-    image: postgres:16
-    container_name: taskboard-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: taskboard
-      POSTGRES_USER: taskboard
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - taskboard-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U taskboard -d taskboard"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   backend:
     build: ./backend
     container_name: taskboard-backend
     restart: unless-stopped
     environment:
-      DB_URL: jdbc:postgresql://db:5432/taskboard
-      DB_USERNAME: taskboard
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-    depends_on:
-      db:
-        condition: service_healthy
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
 
   frontend:
     build: ./frontend
@@ -35,6 +16,3 @@ services:
       - "80:80"
     depends_on:
       - backend
-
-volumes:
-  taskboard-db-data:

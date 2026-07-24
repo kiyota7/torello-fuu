@@ -7,3 +7,8 @@ output "public_ip" {
   description = "アプリへアクセスするためのElastic IP"
   value       = aws_eip.app.public_ip
 }
+
+output "rds_endpoint" {
+  description = "RDS(PostgreSQL)のエンドポイント(EC2からのみ到達可能)"
+  value       = aws_db_instance.app.address
+}

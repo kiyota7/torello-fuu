@@ -19,6 +19,7 @@ resource "aws_instance" "app" {
   user_data = templatefile("${path.module}/user_data.sh.tpl", {
     repo_url    = var.repo_url
     repo_branch = var.repo_branch
+    db_endpoint = aws_db_instance.app.address
     db_password = var.db_password
   })
 

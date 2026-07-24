@@ -31,9 +31,11 @@ if [ ! -d .git ]; then
   git clone --branch "${repo_branch}" "${repo_url}" .
 fi
 
-# --- .env の生成(パスワードはリポジトリにコミットしない) ---
+# --- .env の生成(RDSの接続情報。パスワードはリポジトリにコミットしない) ---
 cat > /opt/app/.env <<EOF
-POSTGRES_PASSWORD=${db_password}
+DB_URL=jdbc:postgresql://${db_endpoint}:5432/taskboard
+DB_USERNAME=taskboard
+DB_PASSWORD=${db_password}
 EOF
 chmod 600 /opt/app/.env
 
